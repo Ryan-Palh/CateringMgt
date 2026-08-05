@@ -540,6 +540,7 @@ def init_database():
     """)
 
     conn.commit()
+    conn.close()
     migrate_database()
     logger.info(f"数据库初始化完成: {DB_PATH}")
     return True
@@ -554,6 +555,18 @@ def _safe_sql_identifier(name):
         raise ValueError(f"非法 SQL 标识符: {name}")
     return name
 
+_SQL_COLUMN_DEF_RE = _re.compile("^[A-Za-z_][A-Za-z0-9_()'\" ,.=<>0-9-]*$")
+
+def _safe_sql_column_def(col_name, col_def):
+    """验证列名和列定义的安全性，防止 SQL 注入。
+    列名使用严格正则，列定义允许更宽松的 DDL 语法。
+    """
+    if not _SQL_IDENTIFIER_RE.match(col_name):
+        raise ValueError(f"非法 SQL 列名: {col_name}")
+    if not _SQL_COLUMN_DEF_RE.match(col_def):
+        raise ValueError(f"非法 SQL 列定义: {col_def}")
+    return col_name, col_def
+
 
 def migrate_database():
     """迁移已有数据库：补充新字段"""
@@ -566,6 +579,7 @@ def migrate_database():
 
     if current_version >= TARGET_VERSION:
         conn.close()
+        return
 
     logger.info(f"开始数据库迁移: v{current_version} -> v{TARGET_VERSION}")
 
@@ -597,8 +611,7 @@ def migrate_database():
         if col_name not in cols:
             cursor.execute(
                 f"ALTER TABLE employees ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
 
     cursor.execute(
         "UPDATE employees SET is_system_user = 1 WHERE username IS NOT NULL AND username != ''")
@@ -629,8 +642,7 @@ def migrate_database():
         if col_name not in sr_cols:
             cursor.execute(
                 f"ALTER TABLE salary_records ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
 
     # 为业务表添加 store_id
     store_tables = ["purchases", "daily_revenue", "finance_records", "attendance",
@@ -651,8 +663,7 @@ def migrate_database():
         if col_name not in dr_cols:
             cursor.execute(
                 f"ALTER TABLE daily_revenue ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
 
     # ingredients 表补充字段
     cursor.execute("PRAGMA table_info(ingredients)")
@@ -664,8 +675,7 @@ def migrate_database():
         if col_name not in ing_cols:
             cursor.execute(
                 f"ALTER TABLE ingredients ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
 
     # approvals 表扩展
     cursor.execute("PRAGMA table_info(approvals)")
@@ -687,8 +697,7 @@ def migrate_database():
         if col_name not in att_cols:
             cursor.execute(
                 f"ALTER TABLE attendance ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
 
     # salary_global_config 补充新列
     cursor.execute("PRAGMA table_info(salary_global_config)")
@@ -702,8 +711,7 @@ def migrate_database():
         if col_name not in sg_cols:
             cursor.execute(
                 f"ALTER TABLE salary_global_config ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
     cursor.execute(
         "UPDATE salary_global_config SET standard_work_days=30 WHERE id=1")
 
@@ -738,8 +746,7 @@ def migrate_database():
         if col_name not in sc_cols:
             cursor.execute(
                 f"ALTER TABLE salary_config ADD COLUMN {
-                    _safe_sql_identifier(col_name)} {
-                    _safe_sql_identifier(col_def)}")
+                    _safe_sql_column_def(col_name, col_def)[0]} {_safe_sql_column_def(col_name, col_def)[1]}")
 
     conn.commit()
     conn.close()
@@ -797,6 +804,7 @@ def seed_default_data():
             "INSERT INTO app_meta (key, value) VALUES ('revenue_channels_seeded', '1')")
 
     conn.commit()
+    conn.close()
 
 
 def verify_local_password(username, password):

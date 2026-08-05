@@ -263,5 +263,6 @@ class StoreWidget(QWidget):
                     pass
             cursor.execute("DELETE FROM stores WHERE id=?", (sid,))
             conn.commit()
+            conn.close()
             _sync_cloud()
             self.load_data()

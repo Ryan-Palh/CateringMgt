@@ -129,6 +129,7 @@ class ReimbursementDialog(QDialog):
                            (reimb_id, self.user["id"], _sid_app, title, amount))
 
         conn.commit()
+        conn.close()
         _sync_cloud()
         self.accept()
 

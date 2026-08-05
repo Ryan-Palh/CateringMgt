@@ -166,6 +166,7 @@ class EmployeeDialog(QDialog):
                  salary_val, self.date_hire.date().toString("yyyy-MM-dd"),
                  self.cmb_status.currentText(), self.txt_remark.text(), _sid))
         conn.commit()
+        conn.close()
         _sync_cloud()
         self.accept()
 
@@ -328,5 +329,6 @@ class EmployeeWidget(QWidget):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM employees WHERE id=?", (eid,))
         conn.commit()
+        conn.close()
         _sync_cloud()
         self.load_data()

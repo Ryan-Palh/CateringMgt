@@ -60,10 +60,10 @@ def _derive_machine_key():
         return b"CateringMgt_Fallback_Key_2024_x!"
 
 def _get_fernet():
-    """获取 Fernet 加密实例，不可用时返回 None"""
+    """获取 Fernet 加密实例，使用机器绑定密钥，不可用时返回 None"""
     try:
         from cryptography.fernet import Fernet
-        raw_key = hashlib.sha256(b"RestaurantMgt_2024_SecretKey_XOR").digest()
+        raw_key = _derive_machine_key()
         fernet_key = base64.urlsafe_b64encode(raw_key)
         return Fernet(fernet_key)
     except ImportError:

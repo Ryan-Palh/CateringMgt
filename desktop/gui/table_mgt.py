@@ -90,6 +90,7 @@ class TableDialog(QDialog):
             cursor.execute("""INSERT INTO dining_tables (name,area,capacity,status,store_id) VALUES (?,?,?,?,?)""",
                           (name, self.txt_area.text(), self.spin_cap.value(), self.cmb_status.currentText(), _sid))
         conn.commit()
+        conn.close()
         _sync_cloud()
         self.accept()
 
@@ -255,6 +256,7 @@ class TableWidget(QWidget):
             cursor = conn.cursor()
             cursor.execute("DELETE FROM dining_tables WHERE id=?", (row["id"],))
             conn.commit()
+            conn.close()
             _sync_cloud()
             self.load_data()
 
@@ -263,5 +265,6 @@ class TableWidget(QWidget):
         cursor = conn.cursor()
         cursor.execute("UPDATE dining_tables SET status=? WHERE id=?", (status, row["id"]))
         conn.commit()
+        conn.close()
         _sync_cloud()
         self.load_data()

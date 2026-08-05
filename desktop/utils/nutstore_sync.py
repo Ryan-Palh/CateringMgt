@@ -217,7 +217,9 @@ class NutstoreSync:
                     return False, f"下载的数据库文件无效: {e}"
                 # 验证通过，替换本地文件
                 if os.path.exists(DB_PATH):
-                    os.replace(tmp_path, DB_PATH)
+                    # 使用 shutil.move 替代 os.replace，支持跨文件系统
+                    import shutil
+                    shutil.move(tmp_path, DB_PATH)
                 else:
                     os.rename(tmp_path, DB_PATH)
                 # 同步元数据到本地

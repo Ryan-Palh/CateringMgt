@@ -120,6 +120,7 @@ class ShiftDialog(QDialog):
             count += 1
             current = current.addDays(1)
         conn.commit()
+        conn.close()
         _sync_cloud()
         QMessageBox.information(self, "成功", f"已为 {self.cmb_emp.currentText()} 设置 {count} 天排班")
         self.accept()

@@ -37,18 +37,21 @@ def _sync_cloud():
 def _migrate_channel_name_columns():
     """旧库兼容：为 revenue_packages / revenue_package_types 补 channel_name 列"""
     conn = get_connection()
-    cursor = conn.cursor()
-    for table in ("revenue_packages", "revenue_package_types"):
-        try:
-            cursor.execute(f"PRAGMA table_info({_safe_sql_identifier(table)})")
-            cols = {row[1] for row in cursor.fetchall()}
-            if "channel_name" not in cols:
-                cursor.execute(
-                    f"ALTER TABLE {_safe_sql_identifier(table)} ADD COLUMN channel_name TEXT DEFAULT ''")
-                conn.commit()
-                _sync_cloud()
-        except Exception as e:
-            _logger.debug(f"迁移 {table}.channel_name 失败: {e}")
+    try:
+        cursor = conn.cursor()
+        for table in ("revenue_packages", "revenue_package_types"):
+            try:
+                cursor.execute(f"PRAGMA table_info({_safe_sql_identifier(table)})")
+                cols = {row[1] for row in cursor.fetchall()}
+                if "channel_name" not in cols:
+                    cursor.execute(
+                        f"ALTER TABLE {_safe_sql_identifier(table)} ADD COLUMN channel_name TEXT DEFAULT ''")
+                    conn.commit()
+                    _sync_cloud()
+            except Exception as e:
+                _logger.debug(f"迁移 {table}.channel_name 失败: {e}")
+    finally:
+        conn.close()
 
 
 def create_revenue_config_tables():
@@ -152,6 +155,7 @@ class ChannelManageDialog(QDialog):
                         "(type_name, channel_name, store_id) VALUES (?,?,?)",
                         (pkg_type, self.channel_name, _sid))
                     conn.commit()
+                    conn.close()
                     _sync_cloud()
                     QMessageBox.information(self, "成功", f"类型「{pkg_type}」已添加")
                 self._load_type_combo()
@@ -350,6 +354,7 @@ class ChannelManageDialog(QDialog):
             "UPDATE revenue_packages SET package_name=?, type_name=? WHERE id=?",
             (new_name, new_type, rid))
         conn.commit()
+        conn.close()
         self._load_packages()
         self._load_type_combo()
         _sync_cloud()
@@ -362,6 +367,7 @@ class ChannelManageDialog(QDialog):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM revenue_packages WHERE id=?", (rid,))
         conn.commit()
+        conn.close()
         self._load_packages()
         _sync_cloud()
 
@@ -604,5 +610,6 @@ class RevenueConfigDialog(QDialog):
                     (ch_name, _sid))
         cursor.execute("DELETE FROM revenue_channels WHERE id=?", (rid,))
         conn.commit()
+        conn.close()
         self._load_channels()
         _sync_cloud()

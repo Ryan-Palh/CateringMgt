@@ -279,5 +279,6 @@ class ApprovalWidget(QWidget):
                         auto_finance_from_reimbursement(biz_id, row["amount"], emp_name, op)
 
             conn.commit()
+            conn.close()
             _sync_cloud()
             self.load_data()

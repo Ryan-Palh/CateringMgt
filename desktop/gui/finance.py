@@ -177,6 +177,8 @@ class FinanceDialog(QDialog):
             _sync_cloud()
         except Exception as e:
             QMessageBox.warning(self, "错误", f"保存失败：{e}")
+        finally:
+            conn.close()
         self.accept()
 
 
@@ -410,5 +412,6 @@ class FinanceWidget(QWidget):
             cursor = conn.cursor()
             cursor.execute("DELETE FROM finance_records WHERE id=?", (record_id,))
             conn.commit()
+            conn.close()
             _sync_cloud()
             self.load_data()

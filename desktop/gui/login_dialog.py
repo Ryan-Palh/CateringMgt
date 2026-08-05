@@ -1241,6 +1241,8 @@ class LoginDialog(QDialog):
         except Exception as e:
             logger.error(f"getOrCreateLocalUser error: {e}")
             return 0
+        finally:
+            conn.close()
 
     def show_error(self, msg):
         self.lbl_error.setText(msg)

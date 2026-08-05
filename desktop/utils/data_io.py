@@ -464,6 +464,7 @@ def full_restore(parent_widget=None):
             import logging; logging.getLogger(__name__).debug(f"数据操作失败(可忽略): {e}")
 
     conn.commit()
+    conn.close()
     _sync_cloud()
     if parent_widget:
         QMessageBox.information(parent_widget, "恢复成功", f"已恢复 {restored} 条记录")
