@@ -736,10 +736,11 @@ class EmployeeAuthDialog(QDialog):
         stores = conn.execute("SELECT id, name FROM stores ORDER BY id").fetchall()
         for s in stores:
             self.store_combo.addItem(s["name"], s["id"])
+        idx = -1
         if emp_info and emp_info["store_id"]:
             idx = self.store_combo.findData(emp_info["store_id"])
-    if idx >= 0:
-        self.store_combo.setCurrentIndex(idx)
+            if idx >= 0:
+                self.store_combo.setCurrentIndex(idx)
         conn.close()
         form.addRow("所属门店:", self.store_combo)
 
