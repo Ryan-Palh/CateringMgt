@@ -337,7 +337,7 @@ class AuthManager:
                 self._client.mkdir(REMOTE_FOLDER)
             except Exception:
                 pass  # 目录可能已存在
-            remote_path = f"{REMOTE_FOLDER}/{USER_FILE}"
+            remote_path = f"{REMOTE_FOLDER.rstrip('/')}/{USER_FILE}"
             import io
 
             # 尝试下载 users.json，404 时返回空列表（首次使用）
@@ -377,7 +377,7 @@ class AuthManager:
                 self._client.mkdir(REMOTE_FOLDER)
             except Exception:
                 pass  # 目录可能已存在
-            remote_path = f"{REMOTE_FOLDER}/{USER_FILE}"
+            remote_path = f"{REMOTE_FOLDER.rstrip('/')}/{USER_FILE}"
             data = json.dumps(user_list.to_dict(), ensure_ascii=False).encode('utf-8')
             import io
             self._client.upload_fileobj(io.BytesIO(data), remote_path, overwrite=True)
