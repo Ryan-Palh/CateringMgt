@@ -22,15 +22,15 @@ else:
     _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     _INTERNAL_DIR = None
 
-# config.ini 可能在 exe 同级、_internal 目录或 _MEIPASS（onefile 解压目录）
+# config.ini 查找顺序：exe 目录（最高优先级，允许运行时修改）> _internal > _MEIPASS（打包内置，兜底）
 _CONFIG_CANDIDATES = [
     os.path.join(_BASE_DIR, "config.ini"),
 ]
 if _INTERNAL_DIR:
-    _CONFIG_CANDIDATES.insert(0, os.path.join(_INTERNAL_DIR, "config.ini"))
-# onefile 模式下 --add-data 打包的文件在 sys._MEIPASS
+    _CONFIG_CANDIDATES.append(os.path.join(_INTERNAL_DIR, "config.ini"))
+# onefile 模式下 --add-data 打包的文件在 sys._MEIPASS（最低优先级，仅兜底）
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    _CONFIG_CANDIDATES.insert(0, os.path.join(sys._MEIPASS, "config.ini"))
+    _CONFIG_CANDIDATES.append(os.path.join(sys._MEIPASS, "config.ini"))
 
 CONFIG_PATH = None
 for _p in _CONFIG_CANDIDATES:
