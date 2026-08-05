@@ -23,6 +23,7 @@ from utils.data_io import export_to_excel
 from utils.app_context import get_app_context as _ctx
 from utils.nutstore_sync import get_sync as _get_sync
 from utils.logger import logger
+from gui.revenue_config import RevenueConfigDialog
 
 _logger = logging.getLogger(__name__)
 
@@ -308,6 +309,10 @@ class RevenueWidget(QWidget):
         btn_add.setStyleSheet(primary_btn)
         btn_add.clicked.connect(self._add_revenue)
         toolbar.addWidget(btn_add)
+        btn_config = QPushButton("配置")
+        btn_config.setStyleSheet(success_btn)
+        btn_config.clicked.connect(lambda: RevenueConfigDialog(self).exec_())
+        toolbar.addWidget(btn_config)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("日期："))
         self.daily_date = ModernDateEdit()

@@ -2,7 +2,7 @@
 ; Inno Setup 7
 
 #define MyAppName "餐饮综合管理系统"
-#define MyAppVersion "5.0.1"
+#define MyAppVersion "5.0.2"
 #define MyAppPublisher "CateringMgt"
 #define MyAppExeName "餐饮综合管理系统.exe"
 
@@ -15,7 +15,7 @@ DefaultDirName=D:\Program Files\CateringMgt
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=..\installer_output
-OutputBaseFilename=餐饮综合管理系统_Setup_v5.0.1
+OutputBaseFilename=餐饮综合管理系统_Setup_v5.0.2
 SetupIconFile=..\assets\app_icon.ico
 Compression=lzma2/Max
 SolidCompression=yes
