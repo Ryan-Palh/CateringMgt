@@ -1,8 +1,0 @@
-PyQt5==5.15.11
-requests>=2.28.0
-webdav3>=3.14.0
-passlib>=1.7.4
-bcrypt>=4.0.0
-cryptography>=41.0.0
-openpyxl>=3.1.0
-Pillow>=9.0.0
