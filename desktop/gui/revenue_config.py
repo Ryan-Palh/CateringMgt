@@ -483,6 +483,11 @@ class RevenueConfigDialog(QDialog):
                 conn.close()
         self.edit_channel.clear()
         self._load_channels()
+        try:
+            from utils.channel_sync import upload_channels
+            upload_channels(get_connection())
+        except Exception:
+            pass
 
     def _load_channels(self):
         conn = get_connection()
@@ -575,6 +580,11 @@ class RevenueConfigDialog(QDialog):
             finally:
                 conn.close()
             self._load_channels()
+        try:
+            from utils.channel_sync import upload_channels
+            upload_channels(get_connection())
+        except Exception:
+            pass
 
     def _del_channel(self, rid):
         reply = QMessageBox.question(
@@ -610,6 +620,11 @@ class RevenueConfigDialog(QDialog):
                     (ch_name, _sid))
         cursor.execute("DELETE FROM revenue_channels WHERE id=?", (rid,))
         conn.commit()
+        try:
+            from utils.channel_sync import upload_channels
+            upload_channels(get_connection())
+        except Exception:
+            pass
         conn.close()
         self._load_channels()
         _sync_cloud()

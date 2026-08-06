@@ -109,36 +109,6 @@ class RevenueDialog(QDialog):
         self.sp_order_count.setFixedHeight(36)
         form.addRow("订单数：", self.sp_order_count)
 
-        self.sp_cash = QDoubleSpinBox()
-        self.sp_cash.setRange(0, 9999999)
-        self.sp_cash.setDecimals(2)
-        self.sp_cash.setPrefix("¥ ")
-        self.sp_cash.setFixedHeight(36)
-        form.addRow("现金：", self.sp_cash)
-
-        self.sp_card = QDoubleSpinBox()
-        self.sp_card.setRange(0, 9999999)
-        self.sp_card.setDecimals(2)
-        self.sp_card.setPrefix("¥ ")
-        self.sp_card.setFixedHeight(36)
-        form.addRow("刷卡：", self.sp_card)
-
-        self.sp_online = QDoubleSpinBox()
-        self.sp_online.setRange(0, 9999999)
-        self.sp_online.setDecimals(2)
-        self.sp_online.setPrefix("¥ ")
-        self.sp_online.setFixedHeight(36)
-        form.addRow("线上：", self.sp_online)
-
-        self.sp_dining = QSpinBox()
-        self.sp_dining.setRange(0, 99999)
-        self.sp_dining.setFixedHeight(36)
-        form.addRow("堂食人数：", self.sp_dining)
-
-        self.sp_takeout = QSpinBox()
-        self.sp_takeout.setRange(0, 99999)
-        self.sp_takeout.setFixedHeight(36)
-        form.addRow("外卖单数：", self.sp_takeout)
 
         self.txt_remark = QLineEdit()
         self.txt_remark.setPlaceholderText("备注")
@@ -165,18 +135,30 @@ class RevenueDialog(QDialog):
 
     def _load_channels(self):
         conn = get_connection()
+        # 从云端同步渠道
+        try:
+            from utils.channel_sync import download_channels
+            download_channels(conn)
+        except Exception:
+            pass
         cursor = conn.cursor()
         cursor.execute("SELECT channel_name FROM revenue_channels ORDER BY sort_order, id")
         rows = cursor.fetchall()
         conn.close()
         self.cmb_channel.clear()
-        default_channels = ["堂食", "外卖", "包间", "其他"]
-        existing = {dict(r)['channel_name'] for r in rows}
-        for ch in default_channels:
-            if ch not in existing:
+        if not rows:
+            default_channels = ["堂食", "外卖", "包间", "其他"]
+            conn2 = get_connection()
+            cur2 = conn2.cursor()
+            for ch in default_channels:
+                cur2.execute("INSERT OR IGNORE INTO revenue_channels (channel_name) VALUES (?)", (ch,))
+            conn2.commit()
+            conn2.close()
+            for ch in default_channels:
                 self.cmb_channel.addItem(ch)
-        for r in rows:
-            self.cmb_channel.addItem(dict(r)['channel_name'])
+        else:
+            for r in rows:
+                self.cmb_channel.addItem(dict(r)['channel_name'])
 
     def _load_packages(self):
         conn = get_connection()
@@ -207,11 +189,6 @@ class RevenueDialog(QDialog):
         self.cmb_package_type.setCurrentText(self.data.get('package_type', '') or '')
         self.sp_amount.setValue(self.data.get('amount', 0) or 0)
         self.sp_order_count.setValue(self.data.get('order_count', 0) or 0)
-        self.sp_cash.setValue(self.data.get('cash_amount', 0) or 0)
-        self.sp_card.setValue(self.data.get('card_amount', 0) or 0)
-        self.sp_online.setValue(self.data.get('online_amount', 0) or 0)
-        self.sp_dining.setValue(self.data.get('dining_count', 0) or 0)
-        self.sp_takeout.setValue(self.data.get('takeout_count', 0) or 0)
         self.txt_remark.setText(self.data.get('remark', '') or '')
 
     def _save(self):
@@ -225,26 +202,20 @@ class RevenueDialog(QDialog):
         try:
             if self.data:
                 cursor.execute("""UPDATE daily_revenue SET record_date=?,channel=?,package_name=?,package_type=?,
-                                  amount=?,order_count=?,cash_amount=?,card_amount=?,online_amount=?,
-                                  dining_count=?,takeout_count=?,remark=?,operator=?
+                                  amount=?,order_count=?,remark=?,operator=?
                                   WHERE id=?""",
                                (record_date, self.cmb_channel.currentText(),
                                 self.cmb_package.currentText(), self.cmb_package_type.currentText(),
                                 amount, self.sp_order_count.value(),
-                                self.sp_cash.value(), self.sp_card.value(), self.sp_online.value(),
-                                self.sp_dining.value(), self.sp_takeout.value(),
                                 self.txt_remark.text(), _ctx().current_user or '系统',
                                 self.data['id']))
             else:
                 cursor.execute("""INSERT INTO daily_revenue (record_date,channel,package_name,package_type,
-                                  amount,order_count,cash_amount,card_amount,online_amount,
-                                  dining_count,takeout_count,operator,remark)
-                                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                  amount,order_count,operator,remark)
+                                  VALUES (?,?,?,?,?,?,?,?)""",
                                (record_date, self.cmb_channel.currentText(),
                                 self.cmb_package.currentText(), self.cmb_package_type.currentText(),
                                 amount, self.sp_order_count.value(),
-                                self.sp_cash.value(), self.sp_card.value(), self.sp_online.value(),
-                                self.sp_dining.value(), self.sp_takeout.value(),
                                 _ctx().current_user or '系统', self.txt_remark.text()))
             conn.commit()
             _sync_cloud()
@@ -334,8 +305,8 @@ class RevenueWidget(QWidget):
         layout.addWidget(self.daily_summary)
 
         self.daily_table = QTableWidget()
-        self.daily_table.setColumnCount(12)
-        self.daily_table.setHorizontalHeaderLabels(["序号", "日期", "渠道", "套餐", "分类", "金额", "订单数", "现金", "刷卡", "线上", "堂食人数", "操作"])
+        self.daily_table.setColumnCount(8)
+        self.daily_table.setHorizontalHeaderLabels(["序号", "日期", "渠道", "套餐", "分类", "金额", "订单数", "操作"])
         self.daily_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.daily_table.setStyleSheet(TABLE_STYLE)
         self.daily_table.verticalHeader().setVisible(False)
@@ -365,14 +336,10 @@ class RevenueWidget(QWidget):
             amt_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.daily_table.setItem(i, 5, amt_item)
             self.daily_table.setItem(i, 6, QTableWidgetItem(str(d.get('order_count', 0) or 0)))
-            self.daily_table.setItem(i, 7, QTableWidgetItem(f"{d.get('cash_amount', 0) or 0:,.2f}"))
-            self.daily_table.setItem(i, 8, QTableWidgetItem(f"{d.get('card_amount', 0) or 0:,.2f}"))
-            self.daily_table.setItem(i, 9, QTableWidgetItem(f"{d.get('online_amount', 0) or 0:,.2f}"))
-            self.daily_table.setItem(i, 10, QTableWidgetItem(str(d.get('dining_count', 0) or 0)))
             btn_edit = QPushButton("编辑")
             btn_edit.setStyleSheet(TABLE_BTN_EDIT)
             btn_edit.clicked.connect(lambda checked, rd=d: self._edit_revenue(rd))
-            self.daily_table.setCellWidget(i, 11, btn_edit)
+            self.daily_table.setCellWidget(i, 7, btn_edit)
 
     def _add_revenue(self):
         dlg = RevenueDialog(self)
